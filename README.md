@@ -10,7 +10,7 @@ On every pull request targeting `main` a multi‑node KinD cluster is spun up fr
 - `kubectl`
 - `kind`
 - Bash‑compatible shell (Linux, macOS, or WSL2)
-- Internet access to fetch the NGINX ingress manifest and the [`hey`](https://github.com/rakyll/hey) binary
+- Internet access to fetch the NGINX ingress manifest and the [`hey`](https://github.com/rakyll/hey) binary.
 
 > On WSL2 the scripts auto‑detect the control‑plane IP and ingress NodePort.  In other environments the default host binding is `127.0.0.1:80`.  You can override both values via `KIND_INGRESS_HOST` / `KIND_INGRESS_PORT` if necessary.
 
