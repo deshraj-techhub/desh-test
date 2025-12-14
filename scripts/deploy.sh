@@ -15,6 +15,9 @@ NAMESPACE="http-echo"
 
 apply_manifests() {
   log "Applying Kubernetes manifests"
+  # Apply the namespace first to ensure it exists
+  kubectl apply -f "${REPO_ROOT}/k8s/namespace.yaml"
+  # Then apply the rest (apply is idempotent)
   kubectl apply -f "${REPO_ROOT}/k8s/"
 }
 

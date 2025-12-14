@@ -1,6 +1,8 @@
-name: Continuous Integration
+name: PR Kubernetes Ingress Validation
 
 on:
+  push:
+    branches: ["main"]
   pull_request:
     branches:
       - main
@@ -12,7 +14,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  integration:
+  pr-e2e-validation:
     runs-on: ubuntu-latest
 
     steps:
