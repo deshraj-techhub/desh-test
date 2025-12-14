@@ -100,7 +100,7 @@ You can monitor the workflow run under the PR’s **Checks** tab.  The Markdown 
 - **Shell script conventions**: all scripts begin with `set -euo pipefail` to abort on any error or unset variable.  They source `scripts/lib.sh` for shared helpers and are structured into functions for readability.  Temporary directories are cleaned up via `trap` to avoid leaking files.
 - **Resource limits and health probes** are defined on each deployment to reflect a more realistic production setup.
 
-## Future Enhancements
+## Future Enhancements 
 
 - Replace the raw ingress manifest with a Helm chart for easier upgrades and configuration management.
 - Introduce observability (e.g. Prometheus + Grafana) and surface resource usage metrics alongside the load‑test report.
