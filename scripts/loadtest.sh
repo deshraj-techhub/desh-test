@@ -94,7 +94,7 @@ main() {
   # Use a temporary directory for output files
   local tmp_dir
   tmp_dir=$(mktemp -d)
-  trap 'rm -rf "${tmp_dir}"' EXIT
+  trap 'rm -rf "${tmp_dir:-}"' EXIT
 
   declare -A outputs
   declare -A total_requests
