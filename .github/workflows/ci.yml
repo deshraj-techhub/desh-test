@@ -1,8 +1,6 @@
 name: PR Kubernetes Ingress Validation
 
 on:
-  push:
-    branches: ["main"]
   pull_request:
     branches:
       - main
