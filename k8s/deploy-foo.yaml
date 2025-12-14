@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echo-foo
+  namespace: http-echo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: echo-foo
+  template:
+    metadata:
+      labels:
+        app: echo-foo
+    spec:
+      containers:
+        - name: echo-foo
+          image: hashicorp/http-echo:0.2.3
+          args:
+            - "-text=foo"
+            - "-listen=:5678"
+          ports:
+            - containerPort: 5678
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-foo
+  namespace: http-echo
+spec:
+  selector:
+    app: echo-foo
+  ports:
+    - port: 5678
+      targetPort: 5678

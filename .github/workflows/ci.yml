@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.31.0'
+
+      - name: Install kind
+        run: |
+          curl -Lo kind-linux-amd64 https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64
+          chmod +x kind-linux-amd64
+          sudo mv kind-linux-amd64 /usr/local/bin/kind
+
+      - name: Create multi-node kind cluster
+        run: |
+          kind create cluster --name ci-cluster --config kind/cluster-config.yaml
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Install ingress-nginx
+        run: |
+          kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
+          kubectl wait --namespace ingress-nginx \
+            --for=condition=ready pod \
+            --selector=app.kubernetes.io/component=controller \
+            --timeout=180s
+        # example from official KinD ingress docs
+        # which is compatible with kind + nginx ingress
+        # [kind ingress guide]
+        # [web:37][web:27]
+
+      - name: Deploy workloads and validate ingress
+        run: |
+          chmod +x scripts/deploy.sh
+          ./scripts/deploy.sh
+
+      - name: Run load test
+        run: |
+          chmod +x scripts/loadtest.sh
+          ./scripts/loadtest.sh loadtest-report.md
+
+      - name: Print load test report
+        run: cat loadtest-report.md
+
+      - name: Capture load test report
+        id: report
+        run: |
+          {
+            echo 'body<<EOF'
+            cat loadtest-report.md
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Comment report on PR
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## Load test results
+
+            ${{ steps.report.outputs.body }}
