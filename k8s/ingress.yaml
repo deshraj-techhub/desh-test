@@ -4,7 +4,12 @@ metadata:
   name: echo-ingress
   namespace: http-echo
   annotations:
+    # rewrite the incoming path to the root of the upstream service
     nginx.ingress.kubernetes.io/rewrite-target: /
+    # disable automatic HTTPS redirects for this demo; clients use plain HTTP
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    # explicitly state the backend protocol
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
 spec:
   ingressClassName: nginx
   rules:
@@ -15,9 +20,9 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: svc-foo
+                name: echo-foo
                 port:
-                  number: 5678
+                  number: 80
     - host: bar.localhost
       http:
         paths:
@@ -25,6 +30,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: svc-bar
+                name: echo-bar
                 port:
-                  number: 5678
+                  number: 80

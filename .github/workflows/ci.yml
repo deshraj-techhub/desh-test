@@ -1,20 +1,22 @@
-name: CI
+name: Continuous Integration
 
 on:
   pull_request:
     branches:
       - main
 
+# Grant the workflow minimal permissions: read access to the repository
+# contents and write access to pull‑request comments.
 permissions:
   contents: read
   pull-requests: write
 
 jobs:
-  test:
+  integration:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up kubectl
@@ -23,28 +25,23 @@ jobs:
           version: 'v1.31.0'
 
       - name: Install kind
-        run: |
-          curl -Lo kind-linux-amd64 https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64
-          chmod +x kind-linux-amd64
-          sudo mv kind-linux-amd64 /usr/local/bin/kind
+        uses: engineerd/setup-kind@v0.5.0
+        with:
+          version: 'v0.23.0'
 
-      - name: Create multi-node kind cluster
+      - name: Create KinD cluster
         run: |
           kind create cluster --name ci-cluster --config kind/cluster-config.yaml
           kubectl cluster-info
           kubectl get nodes
 
-      - name: Install ingress-nginx
+      - name: Install ingress controller
         run: |
           kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
           kubectl wait --namespace ingress-nginx \
             --for=condition=ready pod \
             --selector=app.kubernetes.io/component=controller \
             --timeout=180s
-        # example from official KinD ingress docs
-        # which is compatible with kind + nginx ingress
-        # [kind ingress guide]
-        # [web:37][web:27]
 
       - name: Deploy workloads and validate ingress
         run: |
@@ -55,9 +52,6 @@ jobs:
         run: |
           chmod +x scripts/loadtest.sh
           ./scripts/loadtest.sh loadtest-report.md
-
-      - name: Print load test report
-        run: cat loadtest-report.md
 
       - name: Capture load test report
         id: report
@@ -72,7 +66,6 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: peter-evans/create-or-update-comment@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
             ## Load test results

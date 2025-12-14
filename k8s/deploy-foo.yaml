@@ -3,33 +3,69 @@ kind: Deployment
 metadata:
   name: echo-foo
   namespace: http-echo
+  labels:
+    app.kubernetes.io/name: http-echo
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/instance: foo
+    app.kubernetes.io/version: "0.2.3"
 spec:
+  # two replicas provide basic high availability; scale out in production as needed
   replicas: 2
   selector:
     matchLabels:
-      app: echo-foo
+      app.kubernetes.io/instance: foo
   template:
     metadata:
       labels:
-        app: echo-foo
+        app.kubernetes.io/name: http-echo
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/instance: foo
     spec:
       containers:
-        - name: echo-foo
+        - name: http-echo
           image: hashicorp/http-echo:0.2.3
+          imagePullPolicy: IfNotPresent
           args:
             - "-text=foo"
             - "-listen=:5678"
           ports:
-            - containerPort: 5678
+            - name: http
+              containerPort: 5678
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 1
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: svc-foo
+  name: echo-foo
   namespace: http-echo
+  labels:
+    app.kubernetes.io/name: http-echo
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/instance: foo
 spec:
+  type: ClusterIP
   selector:
-    app: echo-foo
+    app.kubernetes.io/instance: foo
   ports:
-    - port: 5678
-      targetPort: 5678
+    - name: http
+      port: 80
+      targetPort: http
